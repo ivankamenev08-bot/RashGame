@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мини-игра с балансом</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .balance-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .screen {
+            padding: 80px 40px 100px;
+            min-height: 500px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .active {
+            display: flex;
+        }
+        
+        .main-menu {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f5f5f5"/><path d="M0 0L100 100M100 0L0 100" stroke="%23e0e0e0" stroke-width="1"/></svg>');
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 32px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #444;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        button {
+            padding: 15px 25px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .menu-btn {
+            background: linear-gradient(135deg, #2196F3, #0D47A1);
+            color: white;
+        }
+        
+        .menu-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .back-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #FF5722, #D84315);
+            color: white;
+            padding: 10px 20px;
+        }
+        
+        .game-code {
+            font-size: 60px;
+            font-weight: bold;
+            margin: 30px 0;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            letter-spacing: 5px;
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .timer {
+            font-size: 24px;
+            margin: 20px 0;
+            color: #555;
+        }
+        
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .number-btn {
+            background: linear-gradient(135deg, #E0E0E0, #BDBDBD);
+            color: #333;
+            font-size: 24px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .number-btn:hover {
+            background: linear-gradient(135deg, #BDBDBD, #9E9E9E);
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            margin-top: 20px;
+        }
+        
+        .roulette-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .bet-btn {
+            background: linear-gradient(135deg, #9C27B0, #6A1B9A);
+            color: white;
+            padding: 12px;
+            font-size: 16px;
+        }
+        
+        .promo-input {
+            padding: 15px;
+            font-size: 18px;
+            width: 100%;
+            max-width: 300px;
+            border: 2px solid #2196F3;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .result {
+            font-size: 22px;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .success {
+            background-color: #E8F5E9;
+            color: #2E7D32;
+            border: 2px solid #4CAF50;
+        }
+        
+        .error {
+            background-color: #FFEBEE;
+            color: #C62828;
+            border: 2px solid #F44336;
+        }
+        
+        .info {
+            background-color: #E3F2FD;
+            color: #1565C0;
+            border: 2px solid #2196F3;
+        }
+        
+        .clicker-btn {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            font-size: 22px;
+            padding: 20px 40px;
+            border-radius: 50px;
+            margin: 20px 0;
+        }
+        
+        .clicker-btn:disabled {
+            background: linear-gradient(135deg, #BDBDBD, #9E9E9E);
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #F44336, #C62828);
+        }
+        
+        /* Стили для магазина и инвентаря */
+        .shop-items, .inventory-items {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            width: 100%;
+        }
+        
+        .item-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 200px;
+            transition: transform 0.3s ease;
+        }
+        
+        .item-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .item-image {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            border-radius: 10px;
+        }
+        
+        .item-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        
+        .buy-btn {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+        
+        .buy-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .collect-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .earnings {
+            font-size: 14px;
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .owned-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="balance-container">
+            Баланс: $<span id="balance">10.00</span>
+        </div>
+        
+        <!-- Главное меню -->
+        <div class="screen main-menu active" id="main-menu">
+            <h1>Мини-Игры</h1>
+            <div class="menu-buttons">
+                <button class="menu-btn" id="play-btn">Играть</button>
+                <button class="menu-btn" id="roulette-btn">Рулетка</button>
+                <button class="menu-btn" id="clicker-btn">Кликер</button>
+                <button class="menu-btn" id="promo-btn">Промокод</button>
+                <button class="menu-btn" id="shop-btn">Магазин</button>
+                <button class="menu-btn" id="inventory-btn">Инвентарь</button>
+            </div>
+        </div>
+        
+        <!-- Игра -->
+        <div class="screen" id="game-screen">
+            <h2>Игра "Запомни код"</h2>
+            <p>Запомни код и введи его после сигнала!</p>
+            <button class="action-btn" id="start-game-btn">Начать игру</button>
+            <button class="back-btn" onclick="showScreen('main-menu')">Назад</button>
+        </div>
+        
+        <!-- Игровой процесс -->
+        <div class="screen" id="gameplay-screen">
+            <h2>Введите код</h2>
+            <div class="game-code" id="code-display"></div>
+            <div class="timer" id="game-timer"></div>
+            <div class="number-pad" id="number-pad" style="display: none;">
+                <button class="number-btn" onclick="addNumber(1)">1</button>
+                <button class="number-btn" onclick="addNumber(2)">2</button>
+                <button class="number-btn" onclick="addNumber(3)">3</button>
+                <button class="number-btn" onclick="addNumber(4)">4</button>
+                <button class="number-btn" onclick="addNumber(5)">5</button>
+                <button class="number-btn" onclick="addNumber(6)">6</button>
+                <button class="number-btn" onclick="addNumber(7)">7</button>
+                <button class="number-btn" onclick="addNumber(8)">8</button>
+                <button class="number-btn" onclick="addNumber(9)">9</button>
+                <button class="number-btn" onclick="clearNumber()">C</button>
+                <button class="number-btn" onclick="addNumber(0)">0</button>
+                <button class="number-btn" onclick="submitNumber()">OK</button>
+            </div>
+            <div class="result" id="game-result"></div>
+            <button class="back-btn" onclick="showScreen('main-menu')">Назад</button>
+        </div>
+        
+        <!-- Рулетка -->
+        <div class="screen" id="roulette-screen">
+            <h2>Рулетка</h2>
+            <p>Выберите ставку (50% шанс выиграть или проиграть)</p>
+            <div class="roulette-options">
+                <button class="bet-btn" onclick="placeBet(0.5)">$0.5</button>
+                <button class="bet-btn" onclick="placeBet(1)">$1</button>
+                <button class="bet-btn" onclick="placeBet(2)">$2</button>
+                <button class="bet-btn" onclick="placeBet(4)">$4</button>
+                <button class="bet-btn" onclick="placeBet(6)">$6</button>
+                <button class="bet-btn" onclick="placeBet(10)">$10</button>
+                <button class="bet-btn" onclick="placeBet(20)">$20</button>
+                <button class="bet-btn" onclick="placeBet(50)">$50</button>
+                <button class="bet-btn" onclick="placeBet(100)">$100</button>
+            </div>
+            <div class="result" id="roulette-result"></div>
+            <button class="back-btn" onclick="showScreen('main-menu')">Назад</button>
+        </div>
+        
+        <!-- Кликер -->
+        <div class="screen" id="clicker-screen">
+            <h2>Кликер</h2>
+            <p>Нажмите на кнопку, чтобы получить $0.10</p>
+            <button class="clicker-btn" id="clicker-button" onclick="clickReward()">Кликнуть!</button>
+            <div class="timer" id="click-timer">Готов к использованию!</div>
+            <button class="back-btn" onclick="showScreen('main-menu')">Назад</button>
+        </div>
+        
+        <!-- Промокод -->
+        <div class="screen" id="promo-screen">
+            <h2>Активация промокода</h2>
+            <p>Введите промокод:</p>
+            <input type="text" class="promo-input" id="promo-input" placeholder="Промокод">
+            <button class="action-btn" onclick="redeemPromo()">Активировать</button>
+            <div class="result" id="promo-result"></div>
+            <button class="back-btn" onclick="showScreen('main-menu')">Назад</button>
+        </div>
+        
+        <!-- Магазин -->
+        <div class="screen" id="shop-screen">
+            <h2>Магазин</h2>
+            <p>Покупайте предметы для пассивного заработка!</p>
+            <div class="shop-items" id="shop-items">
+                <!-- Товары будут добавлены через JavaScript -->
+            </div>
+            <button class="back-btn" onclick="showScreen('main-menu')">Назад</button>
+        </div>
+        
+        <!-- Инвентарь -->
+        <div class="screen" id="inventory-screen">
+            <h2>Инвентарь</h2>
+            <p>Ваши купленные предметы:</p>
+            <div class="inventory-items" id="inventory-items">
+                <!-- Предметы будут добавлены через JavaScript -->
+            </div>
+            <button class="back-btn" onclick="showScreen('main-menu')">Назад</button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Игровые переменные
+        let balance = 10.00;
+        let gameCode = '';
+        let userInput = '';
+        let clickerAvailable = true;
+        let clickerTimeout;
+        let usedPromoCodes = [];
+        
+        // Данные магазина
+        const shopItems = [
+            {
+                id: 1,
+                name: "Предмет 1",
+                image: "https://static.tildacdn.one/tild3962-6266-4535-b834-363736383431/GiftsGiftsGifts_AgAD.png",
+                price: 50000,
+                incomePerSecond: 5000,
+                owned: 0
+            },
+            {
+                id: 2,
+                name: "Предмет 2",
+                image: "https://data.chpic.su/stickers/p/Plush_Pepe_ADstickers/Plush_Pepe_ADstickers_016.webp",
+                price: 100000,
+                incomePerSecond: 15000,
+                owned: 0
+            },
+            {
+                id: 3,
+                name: "Предмет 3",
+                image: "https://data.chpic.su/stickers/p/PlushPepeGifts_by_EmojiRu_Bot/PlushPepeGifts_by_EmojiRu_Bot_044.webp",
+                price: 150000,
+                incomePerSecond: 30000,
+                owned: 0
+            }
+        ];
+        
+        // Время последнего сбора дохода
+        let lastIncomeCollection = Date.now();
+        
+        // Загрузка данных из localStorage
+        function loadGameData() {
+            const savedBalance = localStorage.getItem('gameBalance');
+            const savedPromoCodes = localStorage.getItem('usedPromoCodes');
+            const savedShopItems = localStorage.getItem('shopItems');
+            const savedLastIncomeCollection = localStorage.getItem('lastIncomeCollection');
+            
+            if (savedBalance) {
+                balance = parseFloat(savedBalance);
+                updateBalanceDisplay();
+            }
+            
+            if (savedPromoCodes) {
+                usedPromoCodes = JSON.parse(savedPromoCodes);
+            }
+            
+            if (savedShopItems) {
+                const loadedItems = JSON.parse(savedShopItems);
+                shopItems.forEach((item, index) => {
+                    if (loadedItems[index]) {
+                        item.owned = loadedItems[index].owned || 0;
+                        item.accumulatedIncome = loadedItems[index].accumulatedIncome || 0;
+                    }
+                });
+            }
+            
+            if (savedLastIncomeCollection) {
+                lastIncomeCollection = parseInt(savedLastIncomeCollection);
+            }
+            
+            // Рассчитать накопленный доход с момента последнего посещения
+            calculateAccumulatedIncome();
+        }
+        
+        // Сохранение данных в localStorage
+        function saveGameData() {
+            localStorage.setItem('gameBalance', balance.toString());
+            localStorage.setItem('usedPromoCodes', JSON.stringify(usedPromoCodes));
+            localStorage.setItem('shopItems', JSON.stringify(shopItems));
+            localStorage.setItem('lastIncomeCollection', lastIncomeCollection.toString());
+        }
+        
+        // Расчет накопленного дохода
+        function calculateAccumulatedIncome() {
+            const currentTime = Date.now();
+            const timePassed = (currentTime - lastIncomeCollection) / 1000; // в секундах
+            
+            shopItems.forEach(item => {
+                if (item.owned > 0) {
+                    const income = item.incomePerSecond * timePassed * item.owned;
+                    item.accumulatedIncome = (item.accumulatedIncome || 0) + income;
+                }
+            });
+            
+            lastIncomeCollection = currentTime;
+            saveGameData();
+        }
+        
+        // Обновление отображения баланса
+        function updateBalanceDisplay() {
+            document.getElementById('balance').textContent = balance.toFixed(2);
+        }
+        
+        // Показать уведомление
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Переключение экранов
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            
+            // Сброс состояния при возврате в главное меню
+            if (screenId === 'main-menu') {
+                resetGameState();
+            }
+            
+            // Обновление магазина и инвентаря при открытии
+            if (screenId === 'shop-screen') {
+                renderShop();
+            }
+            if (screenId === 'inventory-screen') {
+                calculateAccumulatedIncome();
+                renderInventory();
+            }
+        }
+        
+        // Рендер магазина
+        function renderShop() {
+            const shopContainer = document.getElementById('shop-items');
+            shopContainer.innerHTML = '';
+            
+            shopItems.forEach(item => {
+                const itemCard = document.createElement('div');
+                itemCard.className = 'item-card';
+                
+                itemCard.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="item-image">
+                    <div class="item-price">$${item.price.toLocaleString()}</div>
+                    <div class="earnings">+$${item.incomePerSecond.toLocaleString()}/сек</div>
+                    <button class="buy-btn" onclick="buyItem(${item.id})" 
+                            ${balance >= item.price ? '' : 'disabled'}>
+                        Купить
+                    </button>
+                    ${item.owned > 0 ? `<div class="owned-badge">Куплено: ${item.owned}</div>` : ''}
+                `;
+                
+                shopContainer.appendChild(itemCard);
+            });
+        }
+        
+        // Рендер инвентаря
+        function renderInventory() {
+            const inventoryContainer = document.getElementById('inventory-items');
+            inventoryContainer.innerHTML = '';
+            
+            let hasItems = false;
+            
+            shopItems.forEach(item => {
+                if (item.owned > 0) {
+                    hasItems = true;
+                    const itemCard = document.createElement('div');
+                    itemCard.className = 'item-card';
+                    
+                    const accumulated = item.accumulatedIncome || 0;
+                    
+                    itemCard.innerHTML = `
+                        <img src="${item.image}" alt="${item.name}" class="item-image">
+                        <div class="earnings">Доход: $${item.incomePerSecond.toLocaleString()}/сек</div>
+                        <div class="earnings">Накоплено: $${accumulated.toFixed(2)}</div>
+                        <div class="owned-badge">Куплено: ${item.owned}</div>
+                        <button class="collect-btn" onclick="collectIncome(${item.id})">
+                            Собрать
+                        </button>
+                    `;
+                    
+                    inventoryContainer.appendChild(itemCard);
+                }
+            });
+            
+            if (!hasItems) {
+                inventoryContainer.innerHTML = '<p>У вас пока нет купленных предметов. Посетите магазин!</p>';
+            }
+        }
+        
+        // Покупка предмета
+        function buyItem(itemId) {
+            const item = shopItems.find(i => i.id === itemId);
+            
+            if (!item) return;
+            
+            if (balance >= item.price) {
+                balance -= item.price;
+                item.owned += 1;
+                
+                // Инициализируем накопленный доход, если это первая покупка
+                if (!item.accumulatedIncome) {
+                    item.accumulatedIncome = 0;
+                }
+                
+                updateBalanceDisplay();
+                saveGameData();
+                renderShop();
+                
+                showNotification(`Вы купили ${item.name}!`, 'success');
+            } else {
+                showNotification('Недостаточно средств!', 'error');
+            }
+        }
+        
+        // Сбор дохода с предмета
+        function collectIncome(itemId) {
+            const item = shopItems.find(i => i.id === itemId);
+            
+            if (!item || !item.accumulatedIncome || item.accumulatedIncome <= 0) return;
+            
+            const incomeToCollect = item.accumulatedIncome;
+            balance += incomeToCollect;
+            item.accumulatedIncome = 0;
+            
+            updateBalanceDisplay();
+            saveGameData();
+            renderInventory();
+            
+            showNotification(`Вы собрали $${incomeToCollect.toFixed(2)}!`, 'success');
+        }
+        
+        // Инициализация игры
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGameData();
+            
+            // Назначение обработчиков для кнопок главного меню
+            document.getElementById('play-btn').addEventListener('click', function() {
+                if (balance >= 2) {
+                    showScreen('game-screen');
+                } else {
+                    showNotification('Для игры необходимо минимум $2 на балансе!', 'error');
+                }
+            });
+            
+            document.getElementById('roulette-btn').addEventListener('click', function() {
+                showScreen('roulette-screen');
+                document.getElementById('roulette-result').textContent = '';
+            });
+            
+            document.getElementById('clicker-btn').addEventListener('click', function() {
+                showScreen('clicker-screen');
+                updateClickerButton();
+            });
+            
+            document.getElementById('promo-btn').addEventListener('click', function() {
+                showScreen('promo-screen');
+                document.getElementById('promo-result').textContent = '';
+                document.getElementById('promo-input').value = '';
+            });
+            
+            document.getElementById('shop-btn').addEventListener('click', function() {
+                showScreen('shop-screen');
+            });
+            
+            document.getElementById('inventory-btn').addEventListener('click', function() {
+                showScreen('inventory-screen');
+            });
+            
+            // Начало игры
+            document.getElementById('start-game-btn').addEventListener('click', function() {
+                showScreen('gameplay-screen');
+                startGame();
+            });
+        });
+        
+        // Логика игры "Запомни код"
+        function startGame() {
+            // Генерация случайного 4-значного кода
+            gameCode = '';
+            for (let i = 0; i < 4; i++) {
+                gameCode += Math.floor(Math.random() * 10);
+            }
+            
+            // Показ кода
+            const codeDisplay = document.getElementById('code-display');
+            const gameTimer = document.getElementById('game-timer');
+            const numberPad = document.getElementById('number-pad');
+            const gameResult = document.getElementById('game-result');
+            
+            codeDisplay.textContent = gameCode;
+            gameResult.textContent = '';
+            userInput = '';
+            numberPad.style.display = 'none';
+            
+            // Таймер для запоминания кода
+            let timeLeft = 3;
+            gameTimer.textContent = `Запомни код! Осталось: ${timeLeft} сек`;
+            
+            const countdown = setInterval(() => {
+                timeLeft--;
+                gameTimer.textContent = `Запомни код! Осталось: ${timeLeft} сек`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    codeDisplay.textContent = '';
+                    gameTimer.textContent = 'Введите код:';
+                    numberPad.style.display = 'grid';
+                    
+                    // Таймер для ввода кода
+                    let inputTimeLeft = 3.5;
+                    gameTimer.textContent = `Введите код: ${inputTimeLeft} сек`;
+                    
+                    const inputCountdown = setInterval(() => {
+                        inputTimeLeft -= 0.1;
+                        gameTimer.textContent = `Введите код: ${inputTimeLeft.toFixed(1)} сек`;
+                        
+                        if (inputTimeLeft <= 0) {
+                            clearInterval(inputCountdown);
+                            checkGameResult(false);
+                        }
+                    }, 100);
+                }
+            }, 1000);
+        }
+        
+        function addNumber(num) {
+            if (userInput.length < 4) {
+                userInput += num;
+                updateInputDisplay();
+            }
+        }
+        
+        function clearNumber() {
+            userInput = '';
+            updateInputDisplay();
+        }
+        
+        function updateInputDisplay() {
+            document.getElementById('code-display').textContent = userInput;
+        }
+        
+        function submitNumber() {
+            if (userInput.length === 4) {
+                checkGameResult(true);
+            }
+        }
+        
+        function checkGameResult(userSubmitted) {
+            const numberPad = document.getElementById('number-pad');
+            const gameResult = document.getElementById('game-result');
+            
+            numberPad.style.display = 'none';
+            
+            if (userSubmitted && userInput === gameCode) {
+                balance += 1;
+                gameResult.textContent = 'Поздравляем! Вы выиграли $1!';
+                gameResult.className = 'result success';
+                showNotification('+$1.00', 'success');
+            } else {
+                balance -= 2;
+                gameResult.textContent = 'Вы проиграли! С баланса снято $2.';
+                gameResult.className = 'result error';
+                showNotification('-$2.00', 'error');
+            }
+            
+            updateBalanceDisplay();
+            saveGameData();
+            
+            // Возврат в главное меню через 3 секунды
+            setTimeout(() => {
+                showScreen('main-menu');
+            }, 3000);
+        }
+        
+        function resetGameState() {
+            gameCode = '';
+            userInput = '';
+            document.getElementById('code-display').textContent = '';
+            document.getElementById('game-timer').textContent = '';
+            document.getElementById('game-result').textContent = '';
+            document.getElementById('number-pad').style.display = 'none';
+        }
+        
+        // Рулетка
+        function placeBet(amount) {
+            if (balance >= amount) {
+                const win = Math.random() < 0.5;
+                const rouletteResult = document.getElementById('roulette-result');
+                
+                if (win) {
+                    balance += amount;
+                    rouletteResult.textContent = `Вы выиграли! +$${amount}`;
+                    rouletteResult.className = 'result success';
+                    showNotification(`+$${amount}`, 'success');
+                } else {
+                    balance -= amount;
+                    rouletteResult.textContent = `Вы проиграли! -$${amount}`;
+                    rouletteResult.className = 'result error';
+                    showNotification(`-$${amount}`, 'error');
+                }
+                
+                updateBalanceDisplay();
+                saveGameData();
+            } else {
+                showNotification('Недостаточно средств для ставки!', 'error');
+            }
+        }
+        
+        // Кликер
+        function updateClickerButton() {
+            const clickButton = document.getElementById('clicker-button');
+            const clickTimer = document.getElementById('click-timer');
+            
+            if (clickerAvailable) {
+                clickButton.disabled = false;
+                clickButton.textContent = 'Кликнуть!';
+                clickTimer.textContent = 'Готов к использованию!';
+                clickTimer.className = 'timer';
+            } else {
+                clickButton.disabled = true;
+                clickTimer.className = 'timer info';
+            }
+        }
+        
+        function clickReward() {
+            if (clickerAvailable) {
+                balance += 0.1;
+                updateBalanceDisplay();
+                saveGameData();
+                clickerAvailable = false;
+                
+                updateClickerButton();
+                showNotification('+$0.10', 'success');
+                
+                let timeLeft = 120; // 2 минуты в секундах
+                const clickTimer = document.getElementById('click-timer');
+                
+                const countdown = setInterval(() => {
+                    timeLeft--;
+                    
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    
+                    clickTimer.textContent = `До следующего клика: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(countdown);
+                        clickerAvailable = true;
+                        updateClickerButton();
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Промокоды
+        function redeemPromo() {
+            const promoCode = document.getElementById('promo-input').value.toUpperCase();
+            const promoResult = document.getElementById('promo-result');
+            
+            // Проверка, был ли уже использован промокод
+            if (usedPromoCodes.includes(promoCode)) {
+                promoResult.textContent = 'Этот промокод уже был использован!';
+                promoResult.className = 'result error';
+                return;
+            }
+            
+            let reward = 0;
+            
+            switch(promoCode) {
+                case 'THEREALKAMENEV':
+                    reward = 5;
+                    break;
+                case 'VANYA?':
+                    reward = 6;
+                    break;
+                case 'NOWIMHERE':
+                    reward = 1000000;
+                    break;
+                default:
+                    promoResult.textContent = 'Неверный промокод!';
+                    promoResult.className = 'result error';
+                    return;
+            }
+            
+            balance += reward;
+            updateBalanceDisplay();
+            usedPromoCodes.push(promoCode);
+            saveGameData();
+            
+            promoResult.textContent = `Промокод активирован! +$${reward}`;
+            promoResult.className = 'result success';
+            document.getElementById('promo-input').value = '';
+            
+            showNotification(`Промокод активирован! +$${reward}`, 'success');
+        }
+        
+        // Сохранение данных при закрытии страницы
+        window.addEventListener('beforeunload', saveGameData);
+        
+        // Автоматический сбор дохода при загрузке страницы
+        window.addEventListener('load', function() {
+            calculateAccumulatedIncome();
+        });
+    </script>
+</body>
+</html>
